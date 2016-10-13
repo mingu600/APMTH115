@@ -24,6 +24,9 @@ np.set_printoptions(suppress=True)
 # SPECIFY DIRECTION : TRUE FOR REVERSE FLOW | FALSE FOR FORWARD FLOW
 reverse_direction = True
 
+# SPECIFY OUTPUT : 0 = PRINT STATS | 1 = HEATMAP | 2 = PATIENT UREA SCATTER
+figure_to_show = 2
+
 # PARAMETERS
 time_steps = 10**2 #each time step advances blood/dialysis in tubings
 length_segments = 10**2 #divide blood/dialysis tubing into compartments
@@ -41,10 +44,12 @@ time_steps_count = 0
 urea_cleared_flag = False
 blood_list = np.zeros((time_steps, length_segments))
 dialysis_list = np.zeros((time_steps, length_segments))
+pt_urea_list = np.zeros(time_steps)
 
 for t in range(time_steps):
     time_steps_count += 1
     curr_pt_urea = pt_blood_urea_init - diffused_count
+    pt_urea_list[t] = curr_pt_urea
     urea_step = curr_pt_urea * frac_pt_blood_in_dial / length_segments
     if urea_step < 1: #all urea cleared from patient
         urea_cleared_flag = True
@@ -67,32 +72,41 @@ for t in range(time_steps):
     dialysis_list[t] = dialysis
 
 # print results
-print "Dialysis Fluid:"
-print dialysis
-print "\nBlood Fluid:"
-print blood
-print "\nTime steps passed: %i" % time_steps_count
-print "Amount of urea diffused: %i" % diffused_count
-if urea_cleared_flag:
-    print "ALL UREA CLEARED FROM PATIENT"
-else:
-    urea_remaining = pt_blood_urea_init - diffused_count
-    print "Urea remaining in patient: %i" % urea_remaining
-f, axarr = plt.subplots(1, sharex=True)
-# axarr[0].plot(list(range(length_segments)), dialysis, label='Dialysis Tube')
-# axarr[0].plot(list(range(length_segments)), blood, label='Blood')
-# axarr[0].legend()
-# axarr[0].set_title('Urea Concentration in Blood and Dialysis Tube')
-# axarr[0].set_xlabel('Position')
-# axarr[0].set_ylabel('Urea Concentration')
-# axarr[0].set_ylabel('Urea Concentration')
-heatmap = axarr.imshow(blood_list, extent=[0,length_segments,time_steps, 0])
-heatmap.set_cmap('Greys_r')
-axarr.set_ylim([0,time_steps])
-axarr.set_xlabel('Position')
-axarr.set_ylabel('Time Step')
-plt.colorbar(heatmap)
-# plt.figure(figsize = (10, 10))
-# heatmap = plt.imshow(blood_list, cmap='Greys_r', extent=[0,length_segments, 0, time_steps])
-# plt.colorbar(heatmap)
-plt.show()
+if figure_to_show == 0:
+    print "Dialysis Fluid:"
+    print dialysis
+    print "\nBlood Fluid:"
+    print blood
+    print "\nTime steps passed: %i" % time_steps_count
+    print "Amount of urea diffused: %i" % diffused_count
+    if urea_cleared_flag:
+        print "ALL UREA CLEARED FROM PATIENT"
+    else:
+        urea_remaining = pt_blood_urea_init - diffused_count
+        print "Urea remaining in patient: %i" % urea_remaining
+
+# plot heatmap
+elif figure_to_show == 1:
+    f, axarr = plt.subplots(1, sharex=True)
+    # axarr[0].plot(list(range(length_segments)), dialysis, label='Dialysis Tube')
+    # axarr[0].plot(list(range(length_segments)), blood, label='Blood')
+    # axarr[0].legend()
+    # axarr[0].set_title('Urea Concentration in Blood and Dialysis Tube')
+    # axarr[0].set_xlabel('Position')
+    # axarr[0].set_ylabel('Urea Concentration')
+    # axarr[0].set_ylabel('Urea Concentration')
+    heatmap = axarr.imshow(blood_list, extent=[0,length_segments,time_steps, 0])
+    heatmap.set_cmap('Greys_r')
+    axarr.set_ylim([0,time_steps])
+    axarr.set_xlabel('Position')
+    axarr.set_ylabel('Time Step')
+    plt.colorbar(heatmap)
+    # plt.figure(figsize = (10, 10))
+    # heatmap = plt.imshow(blood_list, cmap='Greys_r', extent=[0,length_segments, 0, time_steps])
+    # plt.colorbar(heatmap)
+    plt.show()
+
+# plot urea graph
+elif figure_to_show == 2:
+    plt.scatter(range(time_steps), pt_urea_list)
+    plt.show()
