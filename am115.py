@@ -7,6 +7,14 @@
 # dialysis fluid / patient blood. Urea is cleared from blood when dialysis
 # fluid is hypotonic to patient blood.
 #
+
+#TODO: Figure of urea concentration in body over time
+#TODO: Optimal velocity of dialysis fluid flow rate
+#TODO: Individual blood velocity
+#TODO: Robustness of results (change number of boxes- do results converge?)
+#TODO: Parameter optimization
+
+
 from __future__ import division
 import numpy as np
 import random
@@ -14,7 +22,7 @@ import matplotlib.pyplot as plt
 np.set_printoptions(suppress=True)
 
 # SPECIFY DIRECTION : TRUE FOR REVERSE FLOW | FALSE FOR FORWARD FLOW
-reverse_direction = False
+reverse_direction = True
 
 # PARAMETERS
 time_steps = 10**2 #each time step advances blood/dialysis in tubings
@@ -23,6 +31,7 @@ pt_blood_urea_init = 10**4 #initial urea molecules in patient's blood
 frac_pt_blood_in_dial = .1 #i.e 10% of patient's blood volume fits in dialysizer
 blood_velocity = 1 #positive int
 dialysis_velocity = 1 #positive int
+diffusion_constant = 0.3 #diffusion proportional to difference in concentration
 
 # initialize
 blood = np.zeros(length_segments)
@@ -50,8 +59,7 @@ for t in range(time_steps):
         dialysis[:dialysis_velocity] = 0
     for j in range(length_segments):
         #diffusion_rate = random.random() / 3
-        diffusion_rate = 0.3
-        step_diffusion = diffusion_rate * (blood[j] - dialysis[j])
+        step_diffusion = diffusion_constant * (blood[j] - dialysis[j])
         blood[j] -= step_diffusion
         dialysis[j] += step_diffusion
         diffused_count += step_diffusion
