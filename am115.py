@@ -19,25 +19,32 @@ from __future__ import division
 import numpy as np
 import random
 import matplotlib.pyplot as plt
-np.set_printoptions(suppress=True)
+import pdb
+np.set_printoptions(suppress=False)
 
 # SPECIFY DIRECTION : TRUE FOR REVERSE FLOW | FALSE FOR FORWARD FLOW
 reverse_direction = True
+
+# SPECIFY INITIAL CONDITIONS FOR BLOOD TUBING : TRUE FOR FULL | FALSE FOR EMPTY
+init_full_blood_flag = False
 
 # SPECIFY OUTPUT : 0 = PRINT STATS | 1 = HEATMAP | 2 = PATIENT UREA SCATTER
 figure_to_show = 2
 
 # PARAMETERS
-time_steps = 10**2 #each time step advances blood/dialysis in tubings
-length_segments = 10**2 #divide blood/dialysis tubing into compartments
-pt_blood_urea_init = 10**4 #initial urea molecules in patient's blood
-frac_pt_blood_in_dial = .1 #i.e 10% of patient's blood volume fits in dialysizer
-blood_velocity = 1 #positive int
-dialysis_velocity = 1 #positive int
+time_steps = 10**2 #seconds, assuming ~3hours dialysis
+length_segments = 10**4 #assuming foot-long tube, each compartment is .3048mm
+pt_blood_urea_init = 5*10**7 #initial urea molecules in patient's blood
+frac_pt_blood_in_dial = .1 #10% of patient's blood volume fits in dialysizer
+blood_velocity = 133 #assuming, 400ml/min blood pump rate
+dialysis_velocity = 200 #assuming, 600ml/min blood pump rate
 diffusion_constant = 0.3 #diffusion proportional to difference in concentration
 
 # initialize
 blood = np.zeros(length_segments)
+if init_full_blood_flag:
+    blood = np.full(length_segments, pt_blood_urea_init * \
+    frac_pt_blood_in_dial / length_segments)
 dialysis = np.zeros(length_segments)
 diffused_count = 0
 time_steps_count = 0
@@ -58,7 +65,7 @@ for t in range(time_steps):
     blood[:blood_velocity] = urea_step
     if reverse_direction:
         dialysis = np.roll(dialysis, -dialysis_velocity)
-        dialysis[dialysis_velocity:] = 0
+        dialysis[(length_segments-dialysis_velocity):] = 0
     else:
         dialysis = np.roll(dialysis, dialysis_velocity)
         dialysis[:dialysis_velocity] = 0
@@ -78,12 +85,12 @@ if figure_to_show == 0:
     print "\nBlood Fluid:"
     print blood
     print "\nTime steps passed: %i" % time_steps_count
-    print "Amount of urea diffused: %i" % diffused_count
+    print "Amount of urea diffused: %f mmol" % (diffused_count/10**6)
     if urea_cleared_flag:
         print "ALL UREA CLEARED FROM PATIENT"
     else:
         urea_remaining = pt_blood_urea_init - diffused_count
-        print "Urea remaining in patient: %i" % urea_remaining
+        print "Urea remaining in patient: %f mmol" % (urea_remaining/10**6)
 
 # plot heatmap
 elif figure_to_show == 1:
