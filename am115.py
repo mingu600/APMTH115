@@ -30,25 +30,25 @@ reverse_direction = True
 init_full_blood_flag = False
 
 # SPECIFY OUTPUT : 0 = PRINT STATS | 1 = HEATMAP | 2 = PATIENT UREA SCATTER
-figure_to_show = 1
+figure_to_show = 2
 
 #PARAMETERS
 time_steps = 3 * 10**3 #seconds, assuming ~3hours dialysis
-length_segments = 10**3 #assuming foot-long tube, each compartment is .3048mm
+length_segments = 3 * 10**4 #assuming foot-long tube, each compartment is .1mm
 pt_blood_urea_init = 5*10**7 #initial urea molecules in patient's blood
 frac_pt_blood_in_dial = .1 #10% of patient's blood volume fits in dialysizer
-blood_velocity = 13 #assuming, 400ml/min blood pump rate
-dialysis_velocity = 20 #assuming, 600ml/min blood pump rate
+blood_velocity = 400 #assuming, 400ml/min blood pump rate
+dialysis_velocity = 600 #assuming, 600ml/min blood pump rate
 diffusion_constant = 0.3 #diffusion proportional to difference in concentration
 
 def init_parameters():
     global time_steps, length_segments, pt_blood_urea_init, frac_pt_blood_in_dial, blood_velocity, dialysis_velocity, diffusion_constant
     time_steps = 3 * 10**3 #seconds, assuming ~3hours dialysis
-    length_segments = 10**3 #assuming foot-long tube, each compartment is .3048mm
+    length_segments = 3* 10**4 #assuming foot-long tube, each compartment is .3048mm
     pt_blood_urea_init = 5*10**7 #initial urea molecules in patient's blood
     frac_pt_blood_in_dial = .1 #10% of patient's blood volume fits in dialysizer
-    blood_velocity = 13 #assuming, 400ml/min blood pump rate
-    dialysis_velocity = 20 #assuming, 600ml/min blood pump rate
+    blood_velocity = 400 #assuming, 400ml/min blood pump rate
+    dialysis_velocity = 600 #assuming, 600ml/min blood pump rate
     diffusion_constant = 0.3 #diffusion proportional to difference in concentration
 
 def prettify_ax(ax):
@@ -156,6 +156,7 @@ elif figure_to_show == 1:
     heatmap = axarr.imshow(blood_list, extent=[0,length_segments,time_steps, 0])
     heatmap.set_cmap('Greys_r')
     axarr.set_ylim([0,time_steps])
+    axarr.set_title('Urea Concentration of Blood (particles/segment) in Dialysis Tubing (Forward Flow)')
     axarr.set_xlabel('Position')
     axarr.set_ylabel('Time Step')
     plt.colorbar(heatmap)
@@ -166,7 +167,7 @@ elif figure_to_show == 1:
 
 # plot urea graph
 elif figure_to_show == 2:
-    fig, ax = simple_ax(figsize=(6,6))
+    fig, ax = simple_ax(figsize=(11,8))
     ax.scatter(range(time_steps), pt_urea_list[0]/10**6, c='blue', label = 'Reverse Flow', edgecolor='b')
     ax.scatter(range(time_steps), pt_urea_list[1]/10**6, c='red', label='Forward Flow', edgecolor='r')
     ax.legend()
