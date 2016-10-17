@@ -34,21 +34,21 @@ figure_to_show = 2
 
 #PARAMETERS
 time_steps = 3 * 10**3 #seconds, assuming ~3hours dialysis
-length_segments = 3 * 10**4 #assuming foot-long tube, each compartment is .1mm
+length_segments = 3 * 10**3 #assuming foot-long tube, each compartment is .1mm
 pt_blood_urea_init = 5*10**7 #initial urea molecules in patient's blood
 frac_pt_blood_in_dial = .1 #10% of patient's blood volume fits in dialysizer
-blood_velocity = 400 #assuming, 400ml/min blood pump rate
-dialysis_velocity = 600 #assuming, 600ml/min blood pump rate
+blood_velocity = 40 #assuming, 400ml/min blood pump rate
+dialysis_velocity = 60 #assuming, 600ml/min blood pump rate
 diffusion_constant = 0.3 #diffusion proportional to difference in concentration
 
 def init_parameters():
     global time_steps, length_segments, pt_blood_urea_init, frac_pt_blood_in_dial, blood_velocity, dialysis_velocity, diffusion_constant
     time_steps = 3 * 10**3 #seconds, assuming ~3hours dialysis
-    length_segments = 3* 10**4 #assuming foot-long tube, each compartment is .3048mm
+    length_segments = 3* 10**3 #assuming foot-long tube, each compartment is .3048mm
     pt_blood_urea_init = 5*10**7 #initial urea molecules in patient's blood
     frac_pt_blood_in_dial = .1 #10% of patient's blood volume fits in dialysizer
-    blood_velocity = 400 #assuming, 400ml/min blood pump rate
-    dialysis_velocity = 600 #assuming, 600ml/min blood pump rate
+    blood_velocity = 40 #assuming, 400ml/min blood pump rate
+    dialysis_velocity = 60 #assuming, 600ml/min blood pump rate
     diffusion_constant = 0.3 #diffusion proportional to difference in concentration
 
 def prettify_ax(ax):
@@ -119,13 +119,14 @@ for i in range(min(2, math.factorial(figure_to_show))):
             dialysis = np.roll(dialysis, dialysis_velocity)
             dialysis[:dialysis_velocity] = 0
         for j in range(length_segments):
-            #diffusion_rate = random.random() / 3
             step_diffusion = diffusion_constant * (blood[j] - dialysis[j])
             blood[j] -= step_diffusion
             dialysis[j] += step_diffusion
             diffused_count += step_diffusion
         blood_list[t] = blood
         dialysis_list[t] = dialysis
+        if curr_pt_urea <= 5 * 10**6:
+            print "Reverse Direction: " + str(reverse_direction) + ".....Completion time: " + str(i)
     if figure_to_show == 2:
         reverse_direction = not reverse_direction
 
@@ -146,13 +147,6 @@ if figure_to_show == 0:
 # plot heatmap
 elif figure_to_show == 1:
     f, axarr = plt.subplots(1, sharex=True)
-    # axarr[0].plot(list(range(length_segments)), dialysis, label='Dialysis Tube')
-    # axarr[0].plot(list(range(length_segments)), blood, label='Blood')
-    # axarr[0].legend()
-    # axarr[0].set_title('Urea Concentration in Blood and Dialysis Tube')
-    # axarr[0].set_xlabel('Position')
-    # axarr[0].set_ylabel('Urea Concentration')
-    # axarr[0].set_ylabel('Urea Concentration')
     heatmap = axarr.imshow(blood_list, extent=[0,length_segments,time_steps, 0])
     heatmap.set_cmap('Greys_r')
     axarr.set_ylim([0,time_steps])
@@ -160,9 +154,6 @@ elif figure_to_show == 1:
     axarr.set_xlabel('Position')
     axarr.set_ylabel('Time Step')
     plt.colorbar(heatmap)
-    # plt.figure(figsize = (10, 10))
-    # heatmap = plt.imshow(blood_list, cmap='Greys_r', extent=[0,length_segments, 0, time_steps])
-    # plt.colorbar(heatmap)
     plt.show()
 
 # plot urea graph
@@ -175,6 +166,3 @@ elif figure_to_show == 2:
     ax.set_xlabel('Time (in seconds)')
     ax.set_ylabel('Urea Concentration in Blood (mmol/L)')
     plt.show()
-    # plt.scatter(range(time_steps), pt_urea_list[0]/10**6)
-    # plt.scatter(range(time_steps), pt_urea_list[1]/10**6)
-    # plt.show()
