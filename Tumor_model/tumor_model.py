@@ -9,7 +9,15 @@ from datetime import timedelta
 import csv
 np.set_printoptions(suppress=True)
 
-#
+#TODO: Plot Population of tumor cells over times
+#TODO: Run multiple trials, find relation between B(K) and Population
+#TODO: Clean up code
+#TODO: Function that saves state (includes positions, boundary) so that we can use those to run again
+#TODO: Look up literature values (mutation rate of cancer (and how that relates to number of mutations))
+       # Number of oncogene/tumor suppressor genes
+       # Growth rate of tumors
+       # Death rate of tumors
+       
 
 # Parameters
 n = 20              #number of subpopulations
@@ -53,7 +61,7 @@ def growth(sub_id):
             for neighbor in neighbors:
                 if random.random() < g[sub_id]:
                     positions[sub_id].append(neighbor)
-                    if len(get_neighbors(neighbor)) > 4:
+                    if len(get_neighbors(neighbor)) > 8:
                         boundary.append(neighbor)
 
 def mutate(sub_id):
@@ -114,10 +122,6 @@ def death(sub_id):
             positions[sub_id].remove(cell)
             if cell in boundary:
                 boundary.remove(cell)
-            boundary_neighbors = get_neighbors(cell)
-            for neighbor in boundary_neighbors:
-                if len(get_neighbors(neighbor)) <= 4 and neighbor in boundary:
-                    boundary.remove(neighbor)
             positions[0].append(cell)
 
 if __name__ == "__main__":
