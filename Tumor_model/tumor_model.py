@@ -11,20 +11,20 @@ import csv
 import sys
 np.set_printoptions(suppress=True)
 
-#TODO: Plot Population of tumor cells over times
-#TODO: Run multiple trials, find relation between B(K) and Population
+#TODO: Plot Population of tumor cells over times - DONE
+#TODO: Find B(K) relation - DONE
 #TODO: cleanup code - DONE
-#TODO: Function that saves state (includes positions, boundary) so that we can use those to run again
+#TODO: Function that saves state (includtes positions, boundary) so that we can use those to run again
 #TODO: # Look up literature values (mutation rate of cancer (and how that relates to number of mutations))
        # Number of oncogene/tumor suppressor genes
        # Growth rate of tumors
-       # Death rate of tumors
+       # Death rate of tumors - TODO ZHAODONG
 
 ##### FLAGS #####
 run_with_mutation_flag = True
 save_state_flag = False
 # 0: end positions, 1: all time positions, 2: subpop growth curves, 3: borders
-output_flag = 2
+output_flag = 3
 
 ##### PARAMETERS #####
 n = 20                                                    #number of subpopulations
@@ -40,6 +40,7 @@ mf = [.1/(1+2.718**(.2*(-i+(n/4.)))) for i in range(n)] if\
 # index 0: Dead positions, index 1 to n: subpopulation n
 positions = [[]] + [[(0, 0, 0)]] + [[] for x in range(n-1)]
 positions_history = []
+border_history = []
 boundary = [(0,0,0)]
 
 # make matplotlib plots prettier - adapted code from Adrian Veres
@@ -70,6 +71,7 @@ def growth(sub_id):
                     positions[sub_id].append(neighbor)
                     if len(get_neighbors(neighbor)) > 20:
                         boundary.append(neighbor)
+    return len(outer_cells)
 
 # each live cell can forward mutate or back mutate
 def mutate(sub_id):
@@ -127,7 +129,7 @@ def death(sub_id):
 
 # display results according to output_flag, following the end of simulation
 def display_results():
-    global positions_history
+    global positions_history, boundary
     print
     if save_state_flag:
         pass   #TODO
@@ -149,16 +151,29 @@ def display_results():
                     else 'sphereSubpopCurves'
         plt.savefig('Figures/' + fig_filename)
     elif output_flag == 3:
-        pass #TODO
+        toPlot = [[x[i] for x in border_history] for i in range(n)]
+        fig, ax = simple_ax(figsize=(11,8))
+        ax.set_title('Cells on Tumor Border Over Time')
+        ax.set_xlabel('Time')
+        ax.set_ylabel('Cells on Tumor Border')
+        for j in range(n):
+            label = "Subpopulation " + str(j)
+            ax.plot(toPlot[j], label=label)
+        ax.legend(loc=2, prop={'size':10})
+        fig_filename = 'mutBorderCurves' if run_with_mutation_flag \
+                    else 'sphereBorderCurves'
+        plt.savefig('Figures/' + fig_filename)
 
 if __name__ == '__main__':
     end = time.clock()
     for t in range(t_steps):
         try:
-            for i in range(1, n):
-                growth(i)
+            current_border = []
+            for i in range(1, n+1):
+                current_border.append(growth(i))
                 mutate(i)
                 death(i)
+            border_history.append(current_border)
             for k in range(1, n+2):
                 np.savetxt("Tumor_mutation/tumor_model"+str(t+1)+"_"+str(k)+".csv",\
                 positions[k-1], delimiter=",", fmt= '%i')
@@ -174,7 +189,7 @@ if __name__ == '__main__':
                 sys.stdout.write("Timestep %i done. " % t)
                 sys.stdout.flush()
         except KeyboardInterrupt:
-            print "\nStopping simulation and exporting current results."
+            print "\nStopping simulation and exporting current results...",
             display_results()
             sys.exit(0)
     display_results()
