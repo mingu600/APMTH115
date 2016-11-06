@@ -20,17 +20,28 @@ np.set_printoptions(suppress=True)
        # Growth rate of tumors
        # Death rate of tumors - TODO ZHAODONG
 
+'''
+##### USAGE #####
+python tumor_model.py o m
+o : output_flag | 0 to print the ending positions of the subpopulations, 1 to
+    save to csv, 2 to export graph of subpopulation growth over time, 3 to export
+    graph of subpopulation percent growth over time, 4 to export graph of number
+    of cells on the border for subpopulations over time
+m : run_with_mutation_flag | 1 to run with differential growth for mutations, 0
+    to have consistent growth regardless of tumor cell genotype
+'''
+
 ##### FLAGS #####
+# 0: end positions, 1: all positions, 2: growth, 3: percent growth, 4: borders
+output_flag = 2
+print_flag = False
 run_with_mutation_flag = True
-save_state_flag = False
-# 0: end positions, 1: all time positions, 2: subpop growth curves, 3: borders
-output_flag = 3
 
 ##### PARAMETERS #####
 n = 20                                                    #number of subpopulations
 d = [0.02]*n                                              #death rate
 mb = [0.005 for i in range(n)]                            #backward mutation rate
-t_steps = 100                                             #timesteps
+t_steps = 150                                             #timesteps
 g = [0.005 * i**1.01 for i in range(n)] if\
     run_with_mutation_flag else [0.005 for i in range(n)] #growth rate
 mf = [.1/(1+2.718**(.2*(-i+(n/4.)))) for i in range(n)] if\
@@ -71,7 +82,7 @@ def growth(sub_id):
                     positions[sub_id].append(neighbor)
                     if len(get_neighbors(neighbor)) > 20:
                         boundary.append(neighbor)
-    return len(outer_cells)
+    return len(outer_cells) #record number of cells on border in each subpop
 
 # each live cell can forward mutate or back mutate
 def mutate(sub_id):
@@ -130,9 +141,8 @@ def death(sub_id):
 # display results according to output_flag, following the end of simulation
 def display_results():
     global positions_history, boundary
-    print
-    if save_state_flag:
-        pass   #TODO
+    if print_flag:
+        print
     if output_flag == 0:
         print positions_history
     elif output_flag == 1:
@@ -147,24 +157,43 @@ def display_results():
             label = "Dead cells" if j==0 else "Subpopulation " + str(j)
             ax.plot(toPlot[j], label=label)
         ax.legend(loc=2, prop={'size':10})
+        ax.set_yscale('log')
         fig_filename = 'mutSubpopCurves' if run_with_mutation_flag \
                     else 'sphereSubpopCurves'
         plt.savefig('Figures/' + fig_filename)
     elif output_flag == 3:
+        normalized_pos = [[x/float(sum(y)) for x in y] for y in positions_history]
+        toPlot = [[x[i] for x in normalized_pos] for i in range(n+1)]
+        fig, ax = simple_ax(figsize=(11,8))
+        ax.set_title('Tumor Percentage By Subpopulation Over Time')
+        ax.set_xlabel('Time')
+        ax.set_ylabel('Subpopulation Percent')
+        for j in range(n+1):
+            label = "Dead cells" if j==0 else "Subpopulation " + str(j)
+            ax.plot(toPlot[j], label=label)
+        ax.legend(prop={'size':10}, bbox_to_anchor=(1.1, 1.05))
+        fig_filename = 'mutSubpopPercent' if run_with_mutation_flag \
+                    else 'sphereSubpopPercent'
+        plt.savefig('Figures/' + fig_filename)
+    elif output_flag == 4:
         toPlot = [[x[i] for x in border_history] for i in range(n)]
         fig, ax = simple_ax(figsize=(11,8))
         ax.set_title('Cells on Tumor Border Over Time')
         ax.set_xlabel('Time')
         ax.set_ylabel('Cells on Tumor Border')
         for j in range(n):
-            label = "Subpopulation " + str(j)
+            label = "Subpopulation " + str(j+1)
             ax.plot(toPlot[j], label=label)
         ax.legend(loc=2, prop={'size':10})
         fig_filename = 'mutBorderCurves' if run_with_mutation_flag \
                     else 'sphereBorderCurves'
         plt.savefig('Figures/' + fig_filename)
 
+
 if __name__ == '__main__':
+    if len(sys.argv) == 3 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
+        output_flag = int(sys.argv[1])
+        run_with_mutation_flag = (int(sys.argv[2]) == 1)
     end = time.clock()
     for t in range(t_steps):
         try:
@@ -174,22 +203,26 @@ if __name__ == '__main__':
                 mutate(i)
                 death(i)
             border_history.append(current_border)
-            for k in range(1, n+2):
-                np.savetxt("Tumor_mutation/tumor_model"+str(t+1)+"_"+str(k)+".csv",\
-                positions[k-1], delimiter=",", fmt= '%i')
             positions_history.append([len(x) for x in positions])
             if output_flag == 1:
-                print
-                print "Timestep: " + str(t)
-                print [len(x) for x in positions]
-                print "Population: " + str(len([item for sublist in positions[1:] for item in sublist]))
-                print "Time taken: " + str(str(timedelta(seconds=round(time.clock()-end))))
-                print "Boundary length: " + str(len(boundary))
-            else:
+                for k in range(1, n+2):
+                    np.savetxt("Tumor_mutation/tumor_model"+str(t+1)+"_"+\
+                    str(k)+".csv",positions[k-1], delimiter=",", fmt= '%i')
+                if print_flag:
+                    print
+                    print "Timestep: " + str(t)
+                    print [len(x) for x in positions]
+                    print "Population: " + str(len([item for sublist in \
+                    positions[1:] for item in sublist]))
+                    print "Time taken: " + str(str(timedelta(seconds=\
+                    round(time.clock()-end))))
+                    print "Boundary length: " + str(len(boundary))
+            elif print_flag:
                 sys.stdout.write("Timestep %i done. " % t)
                 sys.stdout.flush()
         except KeyboardInterrupt:
-            print "\nStopping simulation and exporting current results...",
+            if print_flag:
+                print "\nStopping simulation and exporting current results...",
             display_results()
             sys.exit(0)
     display_results()
