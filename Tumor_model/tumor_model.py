@@ -11,38 +11,29 @@ import csv
 import sys
 np.set_printoptions(suppress=True)
 
-#TODO: Plot Population of tumor cells over times - DONE
-#TODO: Find B(K) relation - DONE
-#TODO: cleanup code - DONE
-#TODO: Function that saves state (includtes positions, boundary) so that we can use those to run again
-#TODO: # Look up literature values (mutation rate of cancer (and how that relates to number of mutations))
-       # Number of oncogene/tumor suppressor genes
-       # Growth rate of tumors
-       # Death rate of tumors - TODO ZHAODONG
-
 '''
 ##### USAGE #####
 python tumor_model.py o m
-o : output_flag | 0 to print the ending positions of the subpopulations, 1 to
-    save to csv, 2 to export graph of subpopulation growth over time, 3 to export
-    graph of subpopulation percent growth over time, 4 to export graph of number
-    of cells on the border for subpopulations over time
-m : run_with_mutation_flag | 1 to run with differential growth for mutations, 0
-    to have consistent growth regardless of tumor cell genotype
+o : optional output_flag | 0 to print the ending positions of the subpopulations,
+    1 to save to csv, 2 to export graph of subpopulation growth over time, 3 to
+    export graph of subpopulation percent growth over time, 4 to export graph of
+    number of cells on the border for subpopulations over time
+m : optional run_with_mutation_flag | 1 to run with differential growth for
+    mutations, 0 to have consistent growth regardless of tumor cell genotype
 '''
 
 ##### FLAGS #####
 # 0: end positions, 1: all positions, 2: growth, 3: percent growth, 4: borders
 output_flag = 2
-print_flag = False
+print_flag = True
 run_with_mutation_flag = True
 
 ##### PARAMETERS #####
+t_steps = 50                                             #timesteps
 n = 20                                                    #number of subpopulations
-d = [0.02]*n                                              #death rate
+d = [0.02 for i in range(n)]                              #death rate
 mb = [0.005 for i in range(n)]                            #backward mutation rate
-t_steps = 150                                             #timesteps
-g = [0.005 * i**1.01 for i in range(n)] if\
+g = [0.005 * (i+1)**1.05 for i in range(n)] if\
     run_with_mutation_flag else [0.005 for i in range(n)] #growth rate
 mf = [.1/(1+2.718**(.2*(-i+(n/4.)))) for i in range(n)] if\
     run_with_mutation_flag else [0.01 for i in range(n)]  #forward mutation rate
@@ -78,7 +69,7 @@ def growth(sub_id):
         for position in outer_cells:
             neighbors = get_neighbors(position)
             for neighbor in neighbors:
-                if random.random() < g[sub_id]:
+                if random.random() < g[sub_id-1]:
                     positions[sub_id].append(neighbor)
                     if len(get_neighbors(neighbor)) > 20:
                         boundary.append(neighbor)
@@ -93,22 +84,22 @@ def mutate(sub_id):
             for position in sub_pop:
                 random1 = random.random()
                 random2 = random.random()
-                if random1 < mf[sub_id] and random2 > mb[sub_id]:
+                if random1 < mf[sub_id-1] and random2 > mb[sub_id-1]:
                     positions[sub_id].remove(position)
                     positions[sub_id + 1].append(position)
-                elif random1 > mf[sub_id] and random2 < mb[sub_id]:
+                elif random1 > mf[sub_id-1] and random2 < mb[sub_id-1]:
                     positions[sub_id].remove(position)
                     positions[sub_id - 1].append(position)
         elif sub_id == 1:
             for position in sub_pop:
-                if random.random() < mf[sub_id]:
+                if random.random() < mf[sub_id-1]:
                     positions[sub_id].remove(position)
                     positions[sub_id + 1].append(position)
         elif sub_id == n:
             for position in sub_pop:
-                if random.random() < mb[sub_id]:
+                if random.random() < mb[sub_id-1]:
                     positions[sub_id].remove(position)
-                    positions[sub_id - 1].append(position)
+                    positions[sub_id-1].append(position)
 
 # return all open positions to grow into surrounding a cell
 def get_neighbors(position):
@@ -132,7 +123,7 @@ def death(sub_id):
     inner = set(sub_pop) - set(sub_pop).intersection(set(boundary))
     inner_cells = [x for x in inner]
     for cell in inner_cells:
-        if random.random() < d[sub_id]:
+        if random.random() < d[sub_id-1]:
             positions[sub_id].remove(cell)
             if cell in boundary:
                 boundary.remove(cell)
