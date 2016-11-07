@@ -29,7 +29,7 @@ print_flag = True
 run_with_mutation_flag = True
 
 ##### PARAMETERS #####
-t_steps = 50                                             #timesteps
+t_steps = 100                                             #timesteps
 n = 20                                                    #number of subpopulations
 d = [0.02 for i in range(n)]                              #death rate
 mb = [0.005 for i in range(n)]                            #backward mutation rate
@@ -197,8 +197,13 @@ if __name__ == '__main__':
             positions_history.append([len(x) for x in positions])
             if output_flag == 1:
                 for k in range(1, n+2):
-                    np.savetxt("Tumor_mutation/tumor_model"+str(t+1)+"_"+\
-                    str(k)+".csv",positions[k-1], delimiter=",", fmt= '%i')
+                    if run_with_mutation_flag:
+                        csv_name = "Tumor_mutation/tumor_model"+str(t+1)+\
+                        "_"+str(k)+".csv"
+                    else:
+                        csv_name = 'Tumor_sphere/tumor_model'+str(t+1)+\
+                        '_'+str(k)+".csv"
+                    np.savetxt(csv_name,positions[k-1], delimiter=",",fmt= '%i')
                 if print_flag:
                     print
                     print "Timestep: " + str(t)
