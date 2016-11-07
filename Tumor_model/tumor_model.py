@@ -29,7 +29,7 @@ print_flag = True
 run_with_mutation_flag = True
 
 ##### PARAMETERS #####
-t_steps = 100                                             #timesteps
+t_steps = 50                                              #timesteps
 n = 20                                                    #number of subpopulations
 d = [0.02 for i in range(n)]                              #death rate
 mb = [0.005 for i in range(n)]                            #backward mutation rate
@@ -42,6 +42,7 @@ mf = [.1/(1+2.718**(.2*(-i+(n/4.)))) for i in range(n)] if\
 # index 0: Dead positions, index 1 to n: subpopulation n
 positions = [[]] + [[(0, 0, 0)]] + [[] for x in range(n-1)]
 positions_history = []
+total_cell_count = 1
 border_history = []
 boundary = [(0,0,0)]
 
@@ -62,7 +63,7 @@ def simple_ax(figsize=(6,4), **kwargs):
 
 # each live boundary cell has growth probability according to subpopulation type
 def growth(sub_id):
-    global g, positions, boundary
+    global g, positions, boundary, total_cell_count
     sub_pop = positions[sub_id][:]
     if sub_pop != [()]:
         outer_cells = list(set(sub_pop).intersection(set(boundary)))
@@ -71,9 +72,9 @@ def growth(sub_id):
             for neighbor in neighbors:
                 if random.random() < g[sub_id-1]:
                     positions[sub_id].append(neighbor)
+                    total_cell_count += 1
                     if len(get_neighbors(neighbor)) > 20:
                         boundary.append(neighbor)
-    return len(outer_cells) #record number of cells on border in each subpop
 
 # each live cell can forward mutate or back mutate
 def mutate(sub_id):
@@ -167,19 +168,14 @@ def display_results():
                     else 'sphereSubpopPercent'
         plt.savefig('Figures/' + fig_filename)
     elif output_flag == 4:
-        toPlot = [[x[i] for x in border_history] for i in range(n)]
         fig, ax = simple_ax(figsize=(11,8))
-        ax.set_title('Cells on Tumor Border Over Time')
+        ax.set_title('Percent Cells on Tumor Border Over Time')
         ax.set_xlabel('Time')
-        ax.set_ylabel('Cells on Tumor Border')
-        for j in range(n):
-            label = "Subpopulation " + str(j+1)
-            ax.plot(toPlot[j], label=label)
-        ax.legend(loc=2, prop={'size':10})
+        ax.set_ylabel('Percent Cells on Tumor Border')
+        ax.plot(border_history)
         fig_filename = 'mutBorderCurves' if run_with_mutation_flag \
                     else 'sphereBorderCurves'
         plt.savefig('Figures/' + fig_filename)
-
 
 if __name__ == '__main__':
     if len(sys.argv) == 3 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
@@ -188,22 +184,16 @@ if __name__ == '__main__':
     end = time.clock()
     for t in range(t_steps):
         try:
-            current_border = []
             for i in range(1, n+1):
-                current_border.append(growth(i))
+                growth(i)
                 mutate(i)
                 death(i)
-            border_history.append(current_border)
+            border_history.append(len(boundary)/float(total_cell_count))
             positions_history.append([len(x) for x in positions])
             if output_flag == 1:
                 for k in range(1, n+2):
-                    if run_with_mutation_flag:
-                        csv_name = "Tumor_mutation/tumor_model"+str(t+1)+\
-                        "_"+str(k)+".csv"
-                    else:
-                        csv_name = 'Tumor_sphere/tumor_model'+str(t+1)+\
-                        '_'+str(k)+".csv"
-                    np.savetxt(csv_name,positions[k-1], delimiter=",",fmt= '%i')
+                    np.savetxt("Tumor_mutation/tumor_model"+str(t+1)+"_"+\
+                    str(k)+".csv",positions[k-1], delimiter=",", fmt= '%i')
                 if print_flag:
                     print
                     print "Timestep: " + str(t)
